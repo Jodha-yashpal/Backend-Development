@@ -1,7 +1,7 @@
 import {asyncHandler} from '../utils/asyncHandler.js'
 import {ApiError} from '../utils/ApiError.js'
 import {User} from '../models/user.model.js'
-import {uploadOnCloudinary} from '../middlewares/cloudinary.middlewares.js'
+import {uploadOnCloudinary} from '../utils/cloudinary.js'
 import cookieParser from 'cookie-parser'
 import { ApiResponse } from '../utils/ApiResponse.js'
 
@@ -18,7 +18,7 @@ const registerUser = asyncHandler( async (req, res) => {
 
      // get user details from frontend
      const {fullName, email, username, password} = req.body 
-     console.log("email", email);
+     //console.log("req.body = ", req.body);
 
      // validation
      if(
@@ -28,7 +28,7 @@ const registerUser = asyncHandler( async (req, res) => {
      }
 
      //check if user already exists: username, eamil
-     const existedUser = User.findOne({
+     const existedUser = await User.findOne({
         $or: [{ username }, { email }]
      })
      if (existedUser){
@@ -37,7 +37,14 @@ const registerUser = asyncHandler( async (req, res) => {
 
      // check for images, check for avator
      const avatarLocalPath =  req.files?.avatar[0]?.path
-     const CoverImageLocalPath =  req.files?.coverImage[0]?.path
+     //const CoverImageLocalPath =  req.files?.coverImage[0]?.path
+
+     let CoverImageLocalPath;
+     if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
+         CoverImageLocalPath = req.files.coverImage[0].path
+     }
+
+     //console.log("avatar: ", req.files)
 
      if (!avatarLocalPath){
         throw new ApiError(400, "Avatar file is required")
