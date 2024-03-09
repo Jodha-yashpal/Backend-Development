@@ -16,9 +16,11 @@ app.use(cookieParser()) // to do crud operations on cookies securely
 
 // import routes
 import userRouter from './routes/user.routes.js'
+import vidoRouter from './routes/video.routes.js'
 
 //routes declaration
 app.use("/api/v1/users", userRouter)
+app.use("/api/v1/videos", vidoRouter)
 
 
 export {app}
