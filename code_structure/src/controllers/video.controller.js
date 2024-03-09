@@ -1,4 +1,4 @@
-import mongoose, {connect, isValidObjectId} from "mongoose"
+import mongoose, {connect, isValidObjectId, ObjectId} from "mongoose"
 import {Video} from "../models/video.model.js"
 import {User} from "../models/user.model.js"
 import {ApiError} from "../utils/ApiError.js"
@@ -58,6 +58,30 @@ const publishAVideo = asyncHandler ( async (req, res) => {
     )
 })
 
+const getVideoById = asyncHandler( async (req, res) => {
+    const {videoId} = req.params
+
+    if (!videoId) {
+        throw new ApiError(400, "videoId is required")
+    }
+    const newVideoId = new ObjectId(videoId)
+    // const newVideoId = `ObjectId('${videoId}')`
+
+    const video = await Video.findById(newVideoId)
+
+    if (!video) {
+        throw new ApiError(404, "the video file that user wants to access does not exist")
+    }
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, video, "video file fetched successfully")
+    )
+
+})
+
 export {
-    publishAVideo
+    publishAVideo,
+    getVideoById
 }
