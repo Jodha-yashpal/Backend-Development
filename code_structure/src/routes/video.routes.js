@@ -1,5 +1,5 @@
 import {Router} from "express"
-import {deleteVideo, getVideoById, publishAVideo, togglePublishStatus, updateVideo} from "../controllers/video.controller.js"
+import {deleteVideo, getAllVideos, getVideoById, publishAVideo, togglePublishStatus, updateVideo} from "../controllers/video.controller.js"
 import {upload} from '../middlewares/multer.middleware.js'
 import { verifyJWT } from "../middlewares/auth.middleware.js"
 
@@ -7,7 +7,9 @@ const router = Router()
 
 router.use(verifyJWT)
 
-router.route('/').post(upload.fields([
+router.route('/')
+.get(getAllVideos)
+.post(upload.fields([
     {
         name: "videoFile",
         maxCount: 1,

@@ -204,10 +204,77 @@ const togglePublishStatus = asyncHandler( async (req, res) => {
     )
 })
 
+const getAllVideos = asyncHandler( async (req, res) => {
+    try {
+        //const videos = await Video.find()                   ----> expensive 
+    
+        //aggregation pipeline
+        const videos = await Video.aggregate([
+            {
+                $match: {isPublished: true}
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "owner",
+                    foreignField: "_id",
+                    as: "owner",
+                    pipeline: [
+                        {
+                            $project: {
+                                _id: 1,
+                                username: 1,
+                                fullName: 1,
+                                email: 1,
+                                avatar: 1
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                $addFields: {
+                    owner: {
+                        $first: "$owner"
+                    }
+                }
+            },
+            {
+                $project:{
+                    _id: 1,
+                    thumbnail: 1,
+                    title: 1,
+                    duration: 1,
+                    views: 1,
+                    owner: 1,
+                    createdAt: 1
+                }
+            }
+        ])
+    
+        if (!videos || videos.length == 0) {
+            throw new ApiError(404, "Something went wrong while fetching videos")
+        }
+    
+        console.log("video are fetched --->>>> ",videos)
+    
+        //return response
+        return res
+        .status(200)
+        .json(
+            new ApiResponse(200, videos, "all videos retrieved successfully")
+        )
+    } catch (error) {
+        console.log("error ", error)
+        throw new ApiError(500, "Internal server error")
+    }
+})
+
 export {
     publishAVideo,
     getVideoById,
     updateVideo,
     deleteVideo,
-    togglePublishStatus
+    togglePublishStatus,
+    getAllVideos
 }
