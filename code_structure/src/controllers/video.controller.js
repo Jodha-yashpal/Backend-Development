@@ -65,8 +65,6 @@ const getVideoById = asyncHandler( async (req, res) => {
     if (!videoId) {
         throw new ApiError(400, "videoId is required")
     }
-    // const newVideoId = new ObjectId(videoId)
-    // const newVideoId = `ObjectId('${videoId}')`
 
     const video = await Video.findOne({_id: videoId})
 
@@ -109,14 +107,11 @@ const updateVideo = asyncHandler ( async (req, res) => {
         //fetch --> thumbnail
         if (req.file){
             //update on cloudinary
-            console.log("enter the if condition")
             const thumbnailPath = await uploadOnCloudinary(req.file?.path)
     
             if (!thumbnailPath) {
                 throw new ApiError(409, "error while uploading the thumbnail")
             }
-
-            console.log("got thumbnail object")
     
             //fetch publicId of previous thumbnail
             const arr = videoObj.thumbnail.split("/")
@@ -182,9 +177,37 @@ const deleteVideo = asyncHandler ( async (req, res) => {
     }
 })
 
+const togglePublishStatus = asyncHandler( async (req, res) => {
+    //fetch
+    const {videoId} = req.params
+
+    //retrieve video object
+    const videoObj = await Video.findById(videoId)
+
+    if (!videoObj) {
+        throw new ApiError(404, "the video file does not exist")
+    }
+
+    //toggle the publish status
+    videoObj.isPublished = !videoObj.isPublished
+
+    //save in database
+    videoObj.save({
+        validateBeforeSave: false
+    })
+
+    //return
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, {}, "Publish Status toggled successfully")
+    )
+})
+
 export {
     publishAVideo,
     getVideoById,
     updateVideo,
-    deleteVideo
+    deleteVideo,
+    togglePublishStatus
 }
