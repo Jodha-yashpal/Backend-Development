@@ -181,27 +181,35 @@ const togglePublishStatus = asyncHandler( async (req, res) => {
     //fetch
     const {videoId} = req.params
 
-    //retrieve video object
-    const videoObj = await Video.findById(videoId)
-
-    if (!videoObj) {
-        throw new ApiError(404, "the video file does not exist")
+    if (!videoId) {
+        throw new ApiError(400, "Video ID is missing in the request parameters");
     }
 
-    //toggle the publish status
-    videoObj.isPublished = !videoObj.isPublished
-
-    //save in database
-    videoObj.save({
-        validateBeforeSave: false
-    })
-
-    //return
-    return res
-    .status(200)
-    .json(
-        new ApiResponse(200, {}, "Publish Status toggled successfully")
-    )
+    try {
+        //retrieve video object
+        const videoObj = await Video.findById(videoId)
+    
+        if (!videoObj) {
+            throw new ApiError(404, "the video file does not exist")
+        }
+    
+        //toggle the publish status
+        videoObj.isPublished = !videoObj.isPublished
+    
+        //save in database
+        await videoObj.save({
+            validateBeforeSave: false
+        })
+    
+        //return
+        return res
+        .status(200)
+        .json(
+            new ApiResponse(200, {}, "Publish Status toggled successfully")
+        )
+    } catch (error) {
+        throw new ApiError(500, error?.message || "Internal server error")
+    }
 })
 
 const getAllVideos = asyncHandler( async (req, res) => {
