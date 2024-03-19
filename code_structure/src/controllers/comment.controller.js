@@ -6,10 +6,61 @@ import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 
 const getVideoComments = asyncHandler(async (req, res) => {
-    //TODO: get all comments for a video
-    const {videoId} = req.params
-    const {page = 1, limit = 10} = req.query
 
+    try {
+        // Extract videoId from request parameters
+        const {videoId} = req.params
+    
+        //check if videoId is valid
+        const video = await Video.findById(videoId)
+    
+        if (!video) {
+            throw new ApiError(404, "video not found")
+        }
+    
+        // Extract pagination parameters from query string
+        let {page = 1, limit = 10} = req.query
+    
+        page = parseInt(page)
+        limit = parseInt(limit)
+    
+        // Validate page and limit parameters
+        if (page < 1 || limit < 1) {
+            throw new ApiError(406, "Invalid page or limit no. it should be greater than or equal to 1")
+        }
+    
+        //aggregation pipeline to get the comments
+        const comments = await Comment.aggregate([
+            {
+                $match: { video: new mongoose.Types.ObjectId(videoId)}
+            },
+            {
+                $sort: {createdAt: -1}
+            },
+            {
+                $skip: (page - 1)*limit
+            },
+            {
+                $limit: limit
+            }
+        ])
+    
+        //validation on comments
+        if (!comments || comments.length === 0) {
+            throw new ApiError(404, "no comments found for the specific video")
+        }
+    
+        //return
+        return res
+        .status(200)
+        .json(
+            new ApiResponse(200, comments, "Successfully retrieved the comments")
+        )
+        
+    } catch (error) {
+        console.log("error: ",error)
+        throw new ApiError(500, "Internal Server Error")
+    }
 })
 
 const addComment = asyncHandler(async (req, res) => {
