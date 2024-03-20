@@ -77,7 +77,40 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
     }
 })
 
+const deletePlaylist = asyncHandler(async (req, res) => {
+    try {
+        //fetch
+        const {playlistId} = req.params
+
+        // Validate the playlistId format
+        if(!mongoose.Types.ObjectId.isValid(playlistId)) {
+            throw new ApiError(400, "Invalid playlistId format")
+        }
+
+        // Check if the playlist with the provided playlistId exists
+        const playlist = await Playlist.findById(playlistId)
+
+        if (!playlist) {
+            throw new ApiError(404, "Playlist not found")
+        }
+
+        // If the playlist exists, delete it
+        await Playlist.findByIdAndDelete(playlistId)
+
+        //return response
+        return res
+        .status(200)
+        .json(
+            new ApiResponse(200, {}, "Playlist deleted successfully")
+        )
+
+    } catch (error) {
+        console.log("error while deleting the playlist: ",error)
+        throw new ApiError(500, "Internal server error")
+    }
+})
 export {
     createPlaylist,
-    addVideoToPlaylist
+    addVideoToPlaylist,
+    deletePlaylist
 }
