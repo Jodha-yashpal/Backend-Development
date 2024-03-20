@@ -4,6 +4,7 @@ import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 import { Video } from "../models/video.model.js"
+import { application } from "express"
 
 const createPlaylist = asyncHandler(async (req, res) => {
     try {
@@ -109,8 +110,56 @@ const deletePlaylist = asyncHandler(async (req, res) => {
         throw new ApiError(500, "Internal server error")
     }
 })
+
+const updatePlaylist = asyncHandler( async (req, res) => {
+    try {
+        //fetch playlistId
+        const {playlistId} = req.params
+
+        //fetch name and description
+        const {name, description} = req.body
+
+        //validate name and description
+        if (!(name || description)){
+            throw new ApiError(402, "name or description atleast one of the field is required")
+        }
+
+        // Fetch the playlist based on the playlistId
+        const playlist = await Playlist.findById(playlistId);
+
+        // Check if the playlist exists
+        if (!playlist) {
+            throw new ApiError(404, "playlist not found")
+        }
+
+        // Update the playlist's name and description
+        if (name) {
+            playlist.name = name;
+        }
+        if (description) {
+            playlist.description = description;
+        }
+
+        // Save the updated playlist document
+        await playlist.save({
+            validateBeforeSave: false
+        });
+
+        //return response
+        return res
+        .status(200)
+        .json(
+            new ApiResponse(200, {}, "Playlist updated successfully")
+        )
+
+    } catch (error) {
+        console.log("error while updating playlist: ", error)
+        throw new ApiError(500, "Internal server error")
+    }
+})
 export {
     createPlaylist,
     addVideoToPlaylist,
-    deletePlaylist
+    deletePlaylist,
+    updatePlaylist
 }
