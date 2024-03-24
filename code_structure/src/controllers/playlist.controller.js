@@ -5,6 +5,7 @@ import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 import { Video } from "../models/video.model.js"
 import { application } from "express"
+import { User } from "../models/user.model.js"
 
 const createPlaylist = asyncHandler(async (req, res) => {
     try {
@@ -210,10 +211,73 @@ const getPlaylistById = asyncHandler(async (req, res) => {
     }
 })
 
+const getUserPlaylists = asyncHandler(async (req, res) => {
+    try {
+        //fetch userId
+        const {userId} = req.params
+    
+        //check if user exists
+        const user = await User.findById(userId).select("-password -refreshToken")
+    
+        if (!user || user.length==0){
+            throw new ApiError(404, 'user not exist')
+        }
+    
+        //aggregation pipeline to fetch all playlists
+        const playlists = await Playlist.aggregate([
+            {
+                $lookup: {
+                  from: "users",
+                  localField: "owner",
+                  foreignField: "_id",
+                  as: "owner",
+                },
+            },
+            {
+                $unwind: "$owner",
+            },
+            {
+                $addFields: {
+                  noOfVideos: {
+                    $size: "$videos",
+                  },
+                },
+            },
+            {
+                $project: {
+                  _id: 1,
+                  name: 1,
+                  description: 1,
+                  "owner.fullName": 1,
+                  "owner.avatar": 1,
+                  "owner.username": 1,
+                  noOfVideos: 1,
+                },
+            },
+        ])
+    
+        //validate
+        if (playlists.length == 0){
+            throw new ApiError(400, "playlist not exist")
+        }
+    
+        //return response
+        return res
+        .status(200)
+        .json(
+            new ApiResponse(200, playlists, "User playlists successfully fetched")
+        )
+
+    } catch (error) {
+        throw new ApiError(500, "Internal server error")
+    }
+})
+
 export {
     createPlaylist,
     addVideoToPlaylist,
     deletePlaylist,
     updatePlaylist,
-    getPlaylistById
+    getPlaylistById,
+    getUserPlaylists
 }
