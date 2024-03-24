@@ -157,9 +157,63 @@ const updatePlaylist = asyncHandler( async (req, res) => {
         throw new ApiError(500, "Internal server error")
     }
 })
+
+const getPlaylistById = asyncHandler(async (req, res) => {
+    try {
+        //fetch playlistId
+        const {playlistId} = req.params
+    
+        //check if playlist exist in database
+        const playlist = await Playlist.aggregate([
+            {
+                $match:{
+                    _id: new mongoose.Types.ObjectId(playlistId)
+                }
+            },
+            {
+                $lookup: {
+                    from: 'users', 
+                    localField: 'owner',
+                    foreignField: '_id',
+                    as: 'owner',
+                }
+            },
+            { $unwind: '$owner' },
+            {
+                $project: {
+                  "_id":1,
+                  "name": 1,
+                  "description": 1,
+                  "owner.fullName": 1,
+                  "owner.avatar": 1,
+                  "owner.username": 1,
+                  "videos": 1,
+                  "createdAt":1,
+                  "updatedAt":1
+                }
+            }
+        ])
+    
+        //validate
+        if (!playlist || playlist.length == 0) {
+            throw new ApiError(404, "playlist not exist")
+        }
+    
+        //return response
+        return res
+        .status(200)
+        .json(
+            new ApiResponse(200, playlist, "Playlist successfully fetched")
+        )
+    } catch (error) {
+        throw new ApiError(500, "Interanl Server error")
+    }
+})
+
 export {
     createPlaylist,
     addVideoToPlaylist,
     deletePlaylist,
-    updatePlaylist
+    updatePlaylist,
+    getPlaylistById
 }
