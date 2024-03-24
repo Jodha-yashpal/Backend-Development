@@ -273,11 +273,49 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
     }
 })
 
+const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
+    //fetch playlistId and videoId
+    const {playlistId, videoId} = req.params
+
+    try {
+        // Fetch the playlist based on the playlistId
+        const playlist = await Playlist.findById(playlistId);
+    
+        // Check if the playlist exists
+        if (!playlist) {
+            throw new ApiError(404, "Playlist not found");
+        }
+    
+        //Validate if the videoId exists in the playlist
+        const videoIndex = playlist.videos.findIndex(id => id.toString() === videoId);
+        if (videoIndex === -1) {
+            throw new ApiError(404, "Video not found in playlist");
+        }
+    
+        //Remove the videoId from the videos array
+        playlist.videos.splice(videoIndex, 1);
+    
+        // Save the updated playlist document
+        await playlist.save();
+    
+        return res
+        .status(200)
+        .json(
+            new ApiResponse(200, {}, "video successfully removed from playlist")
+        )
+
+    } catch (error) {
+        console.log("Error while removing video from playlist: ", error)
+        throw new ApiError(500, "Internal Server Error")
+    }
+})
+
 export {
     createPlaylist,
     addVideoToPlaylist,
     deletePlaylist,
     updatePlaylist,
     getPlaylistById,
-    getUserPlaylists
+    getUserPlaylists,
+    removeVideoFromPlaylist
 }
