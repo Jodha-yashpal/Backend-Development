@@ -13,23 +13,29 @@ const toggleSubscription = asyncHandler(async (req, res) => {
     
         //fetch userId(usreId of the one who is subcribing)
         const {subscriberId} = req.user._id
-        console.log(req.user._id)
     
-        // Validate channelId and subscriberId
-        // if (!mongoose.Types.ObjectId.isValid(channelId) || !mongoose.Types.ObjectId.isValid(subscriberId)) {
-        //     throw new ApiError(400, "Invalid channelId or subscriberId");
-        // }
-    
+        // Validate channelId
+        if (!mongoose.Types.ObjectId.isValid(channelId)) {
+            throw new ApiError(400, "Invalid channelId");
+        }
+
+        // Check if user is authenticated
+        if (!subscriberId) {
+            throw new ApiError(401, "User not authenticated");
+        }
+
         //check if document already exists
         const filter = {
             subscriber: req.user._id,
             channel: channelId
         }
 
+        // Toggle subscription
         const deleteSubscription = await Subscription.deleteOne(filter).populate()
         let isSubscribed = false
 
         if (deleteSubscription.deletedCount === 0){
+            // Subscription does not exist, create a new one
             isSubscribed = true
             await Subscription.create(filter)
         }
